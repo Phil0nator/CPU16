@@ -1,6 +1,64 @@
 
 #once
 
+IOMEM_BASE = 0x00
+IOMEM_SIZE = 0x20
+SRAM_BASE = 0x20
+SRAM_SIZE = (0xffff-IOMEM_SIZE)
+PFLASH_SIZE = 0xffff
+VECTORS_SIZE = 64
+BOOT_SIZE = 0x100
+PBOOT_SIZE = (VECTORS_SIZE + BOOT_SIZE)
+
+#bankdef boot {
+    #bits 16
+    #addr 0x0000
+    #addr_end PBOOT_SIZE
+    #outp 0x0000
+    #fill
+}
+
+#bankdef pflash {
+    #bits 16
+    #addr PBOOT_SIZE
+    #addr_end 0xffff
+    #outp 16*PBOOT_SIZE
+}
+
+#bankdef sram {
+    #addr SRAM_BASE
+    #size SRAM_SIZE
+    #bits 16
+}
+
+#bank sram
+__GIT_begin:
+__int_pina_vect:
+#res 1
+__int_pinb_vect:
+#res 1
+__int_t0ovf_vect:
+#res 1
+__int_t0oca_vect:
+#res 1
+__int_t0ocb_vect:
+#res 1
+__GIT_end:
+#bank pflash
+
+
+#fn paddr(bytes) => (bytes)
+
+
+
+
+
+SP = 0x01
+FLAGS = 0x02
+INTNO = 0x1f
+
+
+
 MODE_ALU = 0x00`2
 MODE_MEM = 0x01`2
 MODE_BRANCH = 0x02`2
@@ -11,18 +69,6 @@ CCZ = 1`3
 CCN = 2`3
 CCV = 3`3
 CCI = 7`3
-
-
-SP = 0x01
-FLAGS = 0x02
-PORTA = 0x03
-PORTB = 0x04
-PINA = 0x05
-PINB = 0x06
-
-
-SRAM_BASE = 0x20
-
 #ruledef cc {
     c => 1`1 @ CCC
     z => 1`1 @ CCZ
@@ -74,15 +120,17 @@ SRAM_BASE = 0x20
     ror {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 5`4 @ 1`1 @ r`4 @ d`4)
     not {d: register}               => le(MODE_ALU  @ 0`1 @ 6`4 @ 0`1 @ 0`4 @ d`4)
     or {d: register}, {r: register} => le(MODE_ALU  @ 0`1 @ 7`4 @ 0`1 @ r`4 @ d`4) 
-    and {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 8`4 @ 0`1 @ r`4 @ d`4)
-    xor {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 9`4 @ 0`1 @ r`4 @ d`4)
+    xor {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 8`4 @ 0`1 @ r`4 @ d`4)
+    and {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 9`4 @ 0`1 @ r`4 @ d`4)
     lea [{d: register} + {r:register}*2] => le(MODE_ALU @ 0`1 @ 10`4 @ 0`1 @ r`4 @ d`4)
     lea [{d: register} + {r:register}*4] => le(MODE_ALU @ 0`1 @ 11`4 @ 0`1 @ r`4 @ d`4)
     lea [{d: register} + {r:register}*8] => le(MODE_ALU @ 0`1 @ 12`4 @ 0`1 @ r`4 @ d`4)
     div {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 13`4 @ 0`1 @ r`4 @ d`4)
     idiv {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 13`4 @ 1`1 @ r`4 @ d`4)
-    divrem {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 14`4 @ 0`1 @ r`4 @ d`4)
-    idivrem {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 14`4 @ 1`1 @ r`4 @ d`4)
+    divrem {d: register}, {r: register} => le(MODE_ALU @ 1`1 @ 13`4 @ 0`1 @ r`4 @ d`4)
+    idivrem {d: register}, {r: register} => le(MODE_ALU @ 1`1 @ 13`4 @ 1`1 @ r`4 @ d`4)
+    inc {d: register} => le(MODE_ALU @ 0`1 @ 14`4 @ 0`1 @ 0`4 @ d`4)
+    dec {d: register} => le(MODE_ALU @ 0`1 @ 14`4 @ 1`1 @ 0`4 @ d`4)
     cmp {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 15`4 @ 0`1 @ r`4 @ d`4)
 
     ld {d: register} <- {a: register} =>  le(MODE_MEM @ 0`1 @ 0`1 @ 0`3 @ 0`1 @ a`4 @ d`4 )
@@ -91,9 +139,10 @@ SRAM_BASE = 0x20
     st {d: register} -> [{a: u16}] => le(MODE_MEM @ 0`1 @ 1`1 @ 0`3 @ 1`1 @ 0`4 @ d`4) @ le(a)
 
     ldi {d:register}, {i: i16} => le(MODE_MEM @ 0`1 @ 1`1 @ 6`3 @ 0`1 @ 0`4 @ d`4) @ le(i)
+    elpm {d: register}, {a: register} => le(MODE_MEM @ 0`1 @ 1`1 @ 7`3 @ 0`1 @ a`4 @ d`4) @ le(0`16)
 
-    jmp {a: u16} => le(MODE_BRANCH @ 0x00`14) @ le((a/2)`16)
-    j {c: cc} {a: u16} => le(MODE_BRANCH @ 0`1 @ 0`4 @ 1`1 @ c`4 @ 0`4) @ le((a/2)`16)
+    jmp {a: u16} => le(MODE_BRANCH @ 0x00`14) @ le(paddr(a)`16)
+    j {c: cc} {a: u16} => le(MODE_BRANCH @ 0`1 @ 0`4 @ 1`1 @ c`4 @ 0`4) @ le(paddr(a)`16)
     jmp {r: register} => le(MODE_BRANCH @ 0`1 @ 1`4 @ 0`1 @ 0`1 @ 0`3 @ r`4)
     j {c: cc} {r: register} => le(MODE_BRANCH @ 0`1 @ 1`4 @ 1`1 @ c`4 @ r`4 )
 
@@ -108,16 +157,33 @@ SRAM_BASE = 0x20
 
 #ruledef {
 
-    hlt => asm { jmp $ }
+    hlt => { 
+        hlt_addr = $ 
+        asm { jmp {hlt_addr} }
+    }
     ld {d: register} <- SRAM [{a: u16}] => asm { ld {d} <- [{a} + SRAM_BASE] }
     st {d: register} -> SRAM [{a: u16}] => asm { st {d} -> [{a} + SRAM_BASE] }
 
-    call {i: u16} => 
+    zero {d: register} => asm { xor {d}, {d} }
+
+    call {i: u16} => {
+        retaddr = paddr($)+5
         asm { 
-            ldi r15, paddr($)+5
+            ldi r15, {retaddr}
             push r15
             jmp {i}
         }
+    }
+
+    call {r: register} => {
+        retaddr = paddr($)+5
+        asm {
+            ldi r15, {retaddr}
+            push r15
+            jmp {r}
+        }
+    }
+        
 
     ret => 
         asm {
@@ -125,15 +191,39 @@ SRAM_BASE = 0x20
             jmp r15
         }
 
+    
+
 }
 
 
-#fn paddr(bytes) => (bytes / 2)
 
 
+#bank pflash
+__prog_begin:
+#bank boot
+jmp __start
+__interrupt_dispatch:
+    push r15
+    push r14
+    push r13
+
+    ld r14 <- [INTNO]
+    ldi r13, __GIT_begin
+    add r13, r14
+    ld r14 <- r13
+    call r14
+
+    pop r13
+    pop r14
+    pop r15
+    ret
 
 __start:
     ldi r15, 0xffff
     st r15 -> [SP]
-    call main
-    hlt
+    ldi r15, paddr(__stop)
+    push r15
+    jmp main
+__stop:
+    jmp __stop
+

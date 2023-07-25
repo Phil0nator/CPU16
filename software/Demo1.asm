@@ -1,24 +1,35 @@
-#include "arch.asm"
+#include "include/arch.asm"
+#include "include/io.asm"
+#include "include/mem.asm"
 
 
-myTestFunction:
-    add r0, r1
-    ret
+
+__test:
+    #d utf16le("Hello World!\0")
+__test_end:
+
+#bank sram
+__test_sram:
+#res (__test_end-__test)
+__test_sram_end:
+
+#bank pflash
+
+
+
 
 
 main:
-    ldi r0, 10
-    st r0 -> [PORTA]
-    
-    
-    
-    ldi r1, 1
-    ldi r2, 5
 
-    .lp:
-        call myTestFunction
-        st r0 -> [PORTA]
-        sub r2, r1
-        j nz .lp
+    ldi r0, __test
+    ldi r1, __test_sram
+    ldi r2, __test_end - __test
 
-    hlt
+    call p2s_memcpy
+
+    
+
+    ldi r0, __test_sram
+    call puts
+
+    ret
