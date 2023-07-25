@@ -21,13 +21,15 @@ __test_sram_end:
 
 main:
 
+
+    ldi r0, 1
+    st r0 -> [GIMSK]
+
     ldi r0, __test
     ldi r1, __test_sram
     ldi r2, __test_end - __test
 
     call p2s_memcpy
-
-    
 
     ldi r0, __test_sram
     call puts

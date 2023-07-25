@@ -55,6 +55,11 @@ __GIT_end:
 
 SP = 0x01
 FLAGS = 0x02
+
+PCAMSK = 0x1b
+PCBMSK = 0x1c
+GIMSK = 0x1d
+IRETA = 0x1e
 INTNO = 0x1f
 
 
@@ -203,10 +208,20 @@ __prog_begin:
 #bank boot
 jmp __start
 __interrupt_dispatch:
+    push r0     ; allocate return address
     push r15
     push r14
     push r13
 
+    ; fill return address
+    ldi r14, 5
+    ld r13 <- [SP]
+    sub r13, r14    ; r13 = &(SP-5)
+    ld r14 <- [IRETA]
+    st r14 -> r13   ; *(&(SP-5)) = IRETA
+    
+    
+    ; jump to interrupt
     ld r14 <- [INTNO]
     ldi r13, __GIT_begin
     add r13, r14
@@ -216,11 +231,14 @@ __interrupt_dispatch:
     pop r13
     pop r14
     pop r15
-    ret
+
+    ret ; to return address added above
 
 __start:
+    ; setup stack
     ldi r15, 0xffff
     st r15 -> [SP]
+    ; call with __stop as return address
     ldi r15, paddr(__stop)
     push r15
     jmp main
