@@ -17,9 +17,9 @@ piece0_1:
 #d16 le(blk), le(blk), le(blk)
 #d16 le(___), le(___), le(___)
 piece0_2:
-#d16 le(___), le(blk), le(___)
-#d16 le(___), le(blk), le(___)
-#d16 le(___), le(blk), le(___)
+#d16 le(___), le(___), le(blk)
+#d16 le(___), le(___), le(blk)
+#d16 le(___), le(___), le(blk)
 piece0_3:
 #d16 le(___), le(___), le(___)
 #d16 le(blk), le(blk), le(blk)
@@ -186,5 +186,69 @@ place_piece: ; void place_piece( place_addr, grid_addr)
     elpm r14, r0
     st r14 -> r1
     
+
+    ret
+
+solidify_piece: ; void solidify_piece(grid_addr)
+    ldi r13, 10 ; add 10 to skip to next line
+    ldi r12, BLOCK_ACTIVE
+    ldi r11, BLOCK_PLACED
+
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next00
+    st r11 -> r0
+    .next00:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next10
+    st r11 -> r0
+    .next10:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next20
+    st r11 -> r0
+    .next20:
+    add r0, r13
+
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next01
+    st r11 -> r0
+    .next01:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next11
+    st r11 -> r0
+    .next11:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next21
+    st r11 -> r0
+    .next21:
+    add r0, r13
+
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next02
+    st r11 -> r0
+    .next02:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next12
+    st r11 -> r0
+    .next12:
+    inc r0
+    ld r14 <- r0
+    sub r14, r12
+    j nz .next22
+    st r11 -> r0
+    .next22:
+
 
     ret

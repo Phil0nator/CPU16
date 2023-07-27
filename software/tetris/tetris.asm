@@ -2,11 +2,12 @@
 #include "../include/io.asm"
 #include "../include/mem.asm"
 #include "../include/gram.asm"
-
-
+GRID_WIDTH = 12
+GRID_HEIGHT = 22
+GRID_SCALE = 4
 #bank sram
 grid:
-#res (12*22)
+#res (GRID_WIDTH*GRID_HEIGHT)
 grid_end:
 #res 1
 cur_gbuf_addr:
@@ -47,9 +48,11 @@ PIECE_STARTX = 6
 PIECE_STARTY = 1
 
 
+
+
 upload_grid_pxrow: ; void upload_grid_pxrow( [reader] int *gridaddr, [writer] int* gram_addr )
     ; 12 iterations
-    ldi r14, 12
+    ldi r14, GRID_WIDTH
     .loop:
         ; read next block
         read r13
@@ -62,7 +65,6 @@ upload_grid_pxrow: ; void upload_grid_pxrow( [reader] int *gridaddr, [writer] in
         write r12
         write r12
         write r12
-        write r12
 
         ; looping mechanism
         dec r14
@@ -70,7 +72,7 @@ upload_grid_pxrow: ; void upload_grid_pxrow( [reader] int *gridaddr, [writer] in
     
     ; skip to next row
     ld r14 <- [WRITER]
-    ldi r13, 100
+    ldi r13, (160 - GRID_SCALE * GRID_WIDTH)
     add r14, r13
     st r14 -> [WRITER]
     ret 
@@ -85,7 +87,7 @@ upload_grid:
     st r8 -> [READER]
 
     ; 22 loop iterations
-    ldi r9, 22
+    ldi r9, GRID_HEIGHT
     .loop:
         ; preserve reader for each of the 5 rows (drawing 5x5 square)
         ld r8 <- [READER]
@@ -96,8 +98,7 @@ upload_grid:
         call upload_grid_pxrow
         st r8 -> [READER]
         call upload_grid_pxrow
-        st r8 -> [READER]
-        call upload_grid_pxrow
+        
         ; looping mechanism
         dec r9
         j nz .loop
@@ -154,6 +155,75 @@ piece_draw: ; void piece_draw()
     pop r0
     ret
 
+
+piece_check: ; void piece_check()
+    push r1
+    push r2
+    ldi r0, BLOCK_ACTIVE
+    ldi r1, BLOCK_PLACED
+    ldi r2, BLOCK_BORDER 
+    ; r14 = grid[px][py]
+    ld r14 <- [cur_piece_gridaddr]
+    ldi r10, 3 ; i: row (checks below too)
+    ldi r11, 2 ; j: column
+    ; for (i = 0; i < 3; i++)   // row
+    ;   for (j = 0; j < 3; j++) // column
+    ;       if (grid[px+j][py+i] == ACTIVE_BLOCK &&
+    ;           grid[px+j][py+i+1] == BORDER || == BLOCK)
+    ;               STOP;
+    .ilp:
+        .jlp:
+
+            ; r13 = &grid[px+j][py+i]
+            ldi r13, GRID_WIDTH
+            mul r13, r10
+            add r13, r11
+            add r13, r14
+
+            ; r12 = grid[px+j][py+i]
+            ld r12 <- r13
+            sub r12, r0 ; cmp r12, BLOCK_ACTIVE
+            j nz .is_not_active
+            .is_active:
+            ; r13 = &grid[px+j][py+i+1]
+            ldi r12, GRID_WIDTH
+            add r13, r12
+            ; r12 = grid[px+j][py+i+1]
+            ld r12 <- r13
+
+
+            ; if (r12 == BLOCK_PLACED || r12 == BLOCK_BORDER)
+            ;       goto do_stop
+            push r12
+            sub r12, r1
+            j z .do_stop
+            pop r12
+            sub r12, r2
+            j z .do_stop
+            jmp .jcontinue
+
+            .do_stop:
+            ldi r0, 1
+            jmp .return
+
+            .is_not_active:
+            .jcontinue:
+            dec r11
+            j nz .jlp
+
+        dec r10
+        j nz .ilp
+
+    pop r2
+    pop r1
+    xor r0, r0
+
+    .return:
+    ret
+
+
+
+
 main:
 
     ldi r0, __gram_buf0_begin
@@ -176,7 +246,23 @@ main:
     .lp:
     call piece_draw
     call upload_grid
+
+    ; if (piece_check())
+    ;   goto next_piece;
+    ; else
+    ;   continue;
+    call piece_check
+    and r0, r0
+    j nz .next_piece
     call piece_fall
+    jmp .lp
+
+    .next_piece:
+    ld r0 <- [cur_piece_gridaddr]
+    call solidify_piece
+    call reset_piece
+    hlt
+
     jmp .lp
 
     ret
