@@ -1,6 +1,7 @@
 #include "../include/arch.asm"
 #include "../include/io.asm"
 #include "../include/mem.asm"
+#include "../include/util.asm"
 #include "../include/gram.asm"
 GRID_WIDTH = 12
 GRID_HEIGHT = 22
@@ -32,7 +33,7 @@ cur_piece_gridaddr:
 
 #bank pflash
 block_color_map:
-#d16 le(BLACK`16), le(rgb(16,16,16)), le(rgb(31,31,31)), le(rgb(31,0,0))
+#d16 le(BLACK`16), le(rgb(16,16,16)), le(rgb(31,0,0)), le(rgb(0,31,0))
 block_color_map_end:
 empty_grid:
 #include "empty_grid.asm"
@@ -60,6 +61,8 @@ upload_grid_pxrow: ; void upload_grid_pxrow( [reader] int *gridaddr, [writer] in
         ldi r12, block_color_map
         add r13, r12
         elpm r12, r13
+
+
         ; write 5
         write r12
         write r12
@@ -146,11 +149,8 @@ piece_fall: ; void piece_fall()
 piece_draw: ; void piece_draw()
     push r0
     push r1
-    ld r0 <- [cur_piece_gridaddr]
-    call clear_piece
-    ld r0 <- [cur_piece_addr]
-    ld r1 <- [cur_piece_gridaddr]
-    call place_piece    
+    call clear_piece([cur_piece_gridaddr])
+    call place_piece([cur_piece_addr], [cur_piece_gridaddr])  
     pop r1
     pop r0
     ret
@@ -165,13 +165,14 @@ piece_check: ; void piece_check()
     ; r14 = grid[px][py]
     ld r14 <- [cur_piece_gridaddr]
     ldi r10, 3 ; i: row (checks below too)
-    ldi r11, 2 ; j: column
     ; for (i = 0; i < 3; i++)   // row
     ;   for (j = 0; j < 3; j++) // column
     ;       if (grid[px+j][py+i] == ACTIVE_BLOCK &&
     ;           grid[px+j][py+i+1] == BORDER || == BLOCK)
     ;               STOP;
     .ilp:
+        ldi r11, 2 ; j: column
+
         .jlp:
 
             ; r13 = &grid[px+j][py+i]
@@ -232,16 +233,10 @@ main:
     call reset_piece
 
     ; fill the grid with the starting pattern
-    ldi r0, empty_grid
-    ldi r1, grid
-    ldi r2, empty_grid - empty_grid_end
-    call p2s_memcpy
+    call p2s_memcpy(empty_grid, grid, empty_grid_end-empty_grid)
 
     ; fill the screen black
-    ldi r0, __gram_begin
-    ldi r1, BLACK
-    ldi r2, __gram_buf0_end - __gram_buf0_begin
-    call memset
+    call memset(__gram_begin, BLACK, __gram_buf0_end-__gram_buf0_begin)
 
     .lp:
     call piece_draw
@@ -261,7 +256,6 @@ main:
     ld r0 <- [cur_piece_gridaddr]
     call solidify_piece
     call reset_piece
-    hlt
 
     jmp .lp
 

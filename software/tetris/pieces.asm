@@ -1,4 +1,6 @@
 #once
+; #ifndef __PIECES
+; #define __PIECES
 #include "../include/arch.asm"
 #bank pflash
 
@@ -145,7 +147,7 @@ clear_piece: ; void clear_piece (grid_addr)
 
     ret
 
-place_piece: ; void place_piece( place_addr, grid_addr)
+place_piece: ; void place_piece( piece_addr, grid_addr)
     ldi r13, 10 ; add 10 to skip to next line
     
     ; write one row
@@ -252,3 +254,6 @@ solidify_piece: ; void solidify_piece(grid_addr)
 
 
     ret
+
+
+; #endif

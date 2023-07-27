@@ -1,4 +1,6 @@
 #once
+; #ifndef __IO
+; #define __IO
 #include "arch.asm"
 #bank pflash
 
@@ -63,3 +65,6 @@ puts: ; void puts(void* saddr)
 
     pop r1
     ret
+
+
+; #endif

@@ -1,4 +1,5 @@
-
+; #ifndef __ARCH
+; #define __ARCH
 #once
 
 IOMEM_BASE = 0x00
@@ -272,3 +273,6 @@ __start:
 __stop:
     jmp __stop
 
+
+
+; #endif

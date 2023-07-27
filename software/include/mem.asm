@@ -1,4 +1,6 @@
 #once 
+; #ifndef __MEM
+; #define __MEM
 #include "arch.asm"
 #bank pflash
 
@@ -37,3 +39,7 @@ memset: ; void memset(void* dest, int value, size_t size)
         dec r2
         j nz .loop
     ret
+
+
+
+; #endif

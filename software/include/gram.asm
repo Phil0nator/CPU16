@@ -1,3 +1,6 @@
+; #ifndef __GRAM
+; #define __GRAM
+#once
 #include "arch.asm"
 
 BUFSEL0 = 0
@@ -38,3 +41,4 @@ gram_flip:  ; gram_addr* gram_flip()
     ret
 
 
+; #endif
