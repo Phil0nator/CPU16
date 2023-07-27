@@ -30,6 +30,14 @@ putchar:    ; void putchar(char16 c)
     st r0 -> [PULSE]
     ret
 
+getc: ; char16 getc()
+    push r1
+    ld r0 <- [TRX]
+    ldi r1, 1
+    st r1 -> [PULSE]
+    pop r1
+    ret
+
 put_ps:     ; void put_ps(void* paddr)
     push r2
     push r3

@@ -102,11 +102,13 @@ CCI = 7`3
 #ruledef cc {
     c => 1`1 @ CCC
     z => 1`1 @ CCZ
+    e => 1`1 @ CCZ
     n => 1`1 @ CCN
     v => 1`1 @ CCV
     i => 1`1 @ CCI
     nc => 0`1 @ CCC
     nz => 0`1 @ CCZ
+    ne => 0`1 @ CCZ
     nn => 0`1 @ CCN
     nv => 0`1 @ CCV
     ni => 0`1 @ CCI

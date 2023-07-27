@@ -41,4 +41,37 @@ gram_flip:  ; gram_addr* gram_flip()
     ret
 
 
+gram_blit_p: ; void gram_blit_p(void* paddr, void* gram_addr, int height, int width)
+
+    ldi r14, GRAM_WIDTH
+    
+    ; for (; height; height --) {
+    ;   push gram_addr
+    ;   for (; width; width --)
+    ;       *gram_addr++ = *paddr++
+    ;   pop gram_addr
+    ;   gram_addr += GRAM_WIDTH
+    ; }
+    push r3
+    .lpw:
+        pop r3
+        push r3
+        push r1
+        .lph:
+            elpm r13, r0
+            inc r0
+            st r13 -> r1
+            inc r1
+
+            dec r3
+            j nz .lph
+        pop r1
+        add r1, r14
+        dec r2
+        j nz .lpw
+
+    pop r3
+    ret
+
+
 ; #endif

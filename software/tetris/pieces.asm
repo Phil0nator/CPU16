@@ -4,8 +4,8 @@
 #include "../include/arch.asm"
 #bank pflash
 
-#const(noemit) blk = le(0x03`16)
-#const(noemit) ___ = le(0x00`16)
+#const(noemit) blk = (0x03`16)
+#const(noemit) ___ = (0x00`16)
 
 PIECE_SIZE = 9
 PIECE_TOTAL_SIZE = 4*PIECE_SIZE
@@ -121,7 +121,7 @@ pieces_map:
 #d16    le(piece4_0`16)
 #d16    le(piece5_0`16)
 
-clear_piece: ; void clear_piece (grid_addr)
+__old__clear_piece: ; void clear_piece (grid_addr)
     xor r14, r14
     ldi r13, 10 ; add 10 to skip to next line
 
@@ -152,49 +152,90 @@ place_piece: ; void place_piece( piece_addr, grid_addr)
     
     ; write one row
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next00
     st r14 -> r1
+    .next00:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next10
     st r14 -> r1
+    .next10:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next20
     st r14 -> r1
+    .next20:
     inc r0
     add r1, r13
+
     ; write one row
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next01
     st r14 -> r1
+    .next01:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next11
     st r14 -> r1
+    .next11:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next21
     st r14 -> r1
+    .next21:
     inc r0
     add r1, r13
+
     ; write one row
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next02
     st r14 -> r1
+    .next02:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next12
     st r14 -> r1
+    .next12:
     inc r0
     inc r1
     elpm r14, r0
+    ld r12 <- r1
+    and r12, r12
+    j nz .next22
     st r14 -> r1
+    .next22:
+    inc r0
+    add r1, r13
+    
     
 
     ret
 
-solidify_piece: ; void solidify_piece(grid_addr)
+fill_piece_with: ; void solidify_piece(grid_addr, with)
     ldi r13, 10 ; add 10 to skip to next line
     ldi r12, BLOCK_ACTIVE
-    ldi r11, BLOCK_PLACED
+    mov r11, r1
 
     ld r14 <- r0
     sub r14, r12

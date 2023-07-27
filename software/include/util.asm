@@ -38,7 +38,7 @@
     call {fn: u16} ({a}, {b}, {c}, {d}) => {
         asm {
             mov r3, {d}
-            call {fn}({a}, {b}, {c},)
+            call {fn}({a}, {b}, {c})
         }
     }
     call {fn: u16} ({a}, {b}, {c}, {d}, {e}) => {
