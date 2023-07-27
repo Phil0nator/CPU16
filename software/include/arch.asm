@@ -4,7 +4,12 @@
 IOMEM_BASE = 0x00
 IOMEM_SIZE = 0x20
 SRAM_BASE = 0x20
-SRAM_SIZE = (0xffff-IOMEM_SIZE)
+GRAM_WIDTH = 160
+GRAM_HEIGHT = 120
+GRAM_SIZE = (GRAM_WIDTH * GRAM_HEIGHT * 2)
+SRAM_SIZE = (0xffff-IOMEM_SIZE-GRAM_SIZE)
+GRAM_BEGIN = (SRAM_BASE + SRAM_SIZE)
+
 PFLASH_SIZE = 0xffff
 VECTORS_SIZE = 64
 BOOT_SIZE = 0x100
@@ -31,6 +36,22 @@ PBOOT_SIZE = (VECTORS_SIZE + BOOT_SIZE)
     #bits 16
 }
 
+#bankdef gram {
+    #addr GRAM_BEGIN
+    #addr_end 0xffff
+    #bits 16
+}
+
+#bank gram
+__gram_begin:
+__gram_buf0_begin:
+#res (GRAM_WIDTH*GRAM_HEIGHT)
+__gram_buf0_end:
+__gram_buf1_begin:
+#res (GRAM_WIDTH*GRAM_HEIGHT)
+__gram_buf1_end:
+__gram_end:
+
 #bank sram
 __GIT_begin:
 __int_pina_vect:
@@ -56,6 +77,9 @@ __GIT_end:
 SP = 0x01
 FLAGS = 0x02
 
+RAND = 0xa
+WRITER = 0xc
+READER = 0xd
 PCAMSK = 0x1b
 PCBMSK = 0x1c
 GIMSK = 0x1d
@@ -142,6 +166,9 @@ CCI = 7`3
     st {d: register} -> {a: register} =>  le(MODE_MEM @ 0`1 @ 0`1 @ 0`3 @ 1`1 @ a`4 @ d`4 )
     ld {d: register} <- [{a: u16}] => le(MODE_MEM @ 0`1 @ 1`1 @ 0`3 @ 0`1 @ 0`4 @ d`4 ) @ le(a)
     st {d: register} -> [{a: u16}] => le(MODE_MEM @ 0`1 @ 1`1 @ 0`3 @ 1`1 @ 0`4 @ d`4) @ le(a)
+
+    write {r: register} => le(MODE_MEM @ 0`1 @ 0`1 @ 5`3 @ 1`1 @ 0`4 @ r`4)
+    read {d: register} => le(MODE_MEM @ 0`1 @ 0`1 @ 5`3 @ 0`1 @ 0`4 @ d`4)
 
     ldi {d:register}, {i: i16} => le(MODE_MEM @ 0`1 @ 1`1 @ 6`3 @ 0`1 @ 0`4 @ d`4) @ le(i)
     elpm {d: register}, {a: register} => le(MODE_MEM @ 0`1 @ 1`1 @ 7`3 @ 0`1 @ a`4 @ d`4) @ le(0`16)

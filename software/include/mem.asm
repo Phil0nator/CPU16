@@ -5,11 +5,10 @@
 
 p2s_memcpy: ; void p2s_memcpy(void* paddr, void* saddr, size_t size)
     push r5
-
+    st r1 -> [WRITER]
 .loop:
         elpm r5, r0
-        st r5 -> r1
-        inc r1
+        write r5
         inc r0
         dec r2
         j nz .loop
@@ -20,13 +19,21 @@ p2s_memcpy: ; void p2s_memcpy(void* paddr, void* saddr, size_t size)
 
 memcpy: ; void memcpy(void* dest, const void* src, size_t size)
     push r3
+    st r0 -> [WRITER]
+    st r1 -> [READER]
 .loop:
-        ld r3 <- r1
-        st r3 -> r0
-        inc r0
-        inc r1
+        read r3
+        write r3
         dec r2
         j nz .loop
 
     pop r3
+    ret
+
+memset: ; void memset(void* dest, int value, size_t size)
+    st r0 -> [WRITER]
+    .loop:
+        write r1
+        dec r2
+        j nz .loop
     ret

@@ -12,6 +12,9 @@ __test_end:
 __test_sram:
 #res (__test_end-__test)
 __test_sram_end:
+__test_memcpy_sram:
+#res (__test_end-__test)
+__test_memcpy_sram_end:
 
 #bank pflash
 
@@ -31,7 +34,13 @@ main:
 
     call p2s_memcpy
 
-    ldi r0, __test_sram
+    ldi r0, __test_memcpy_sram
+    ldi r1, __test_sram
+    ldi r2, __test_end - __test
+
+    call memcpy
+
+    ldi r0, __test_memcpy_sram
     call puts
 
     ret
