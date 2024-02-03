@@ -138,7 +138,7 @@ CCI = 7`3
 
 #ruledef
 {
-    nop => asm { mov r0, r0 }
+    nop => asm { 0`16 | (MODE_MISC << 14) }
     mov {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 0`4 @ 0`1 @ r`4 @ d`4)
     add {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 1`4 @ 0`1 @ r`4 @ d`4)
     adc {d: register}, {r: register} => le(MODE_ALU @ 0`1 @ 1`4 @ 1`1 @ r`4 @ d`4)
